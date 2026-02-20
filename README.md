@@ -105,6 +105,7 @@ This project is a learning-oriented MLOps playground focused on understanding th
 | **Cloud & Infrastructure** | AWS (S3, App Runner, EC2), Pulumi (Python IaC) |
 | **Container & Registry** | Docker, Docker Hub, Docker Compose |
 | **CI/CD & Security** | GitHub Actions, CodeQL (SAST), Trivy (Container Scan), Bandit, Safety |
+| **Workflow Orchestration** | Apache Airflow 2.8 (LocalExecutor) |
 | **Application** | FastAPI, Python 3.11, Pydantic, Uvicorn |
 | **Data Storage** | PostgreSQL (predictions + MLflow metadata), Redis (caching) |
 | **Data Versioning** | DVC with S3 backend |
@@ -246,6 +247,7 @@ docker-compose logs -f
 # Access services
 # API: http://localhost:8000/docs
 # MLflow: http://localhost:5000
+# Airflow: http://localhost:8080 (admin/admin)
 # Grafana: http://localhost:3000 (admin/admin)
 # Prometheus: http://localhost:9090
 ```
@@ -395,11 +397,13 @@ curl -X POST "http://localhost:8000/api/v1/predict" \
 |----------|-------------|
 | [README.md](README.md) | **Main documentation** - Start here |
 | [README_DOCKER_COMPOSE.md](README_DOCKER_COMPOSE.md) | Run locally with Docker Compose |
+| [README_AIRFLOW.md](README_AIRFLOW.md) | Airflow ML pipeline quick start |
 | [FILE_PURPOSES.md](FILE_PURPOSES.md) | Purpose of every file in the project |
 | [Lab-plannings.md](Lab-plannings.md) | Lab requirements (6 labs) |
 | [docs/00_Setup_Guide_AWS.md](docs/00_Setup_Guide_AWS.md) | AWS setup guide |
 | [docs/02_MLflow_Training.md](docs/02_MLflow_Training.md) | Model training guide |
 | [docs/05_Monitoring.md](docs/05_Monitoring.md) | Monitoring guide |
+| [docs/06_Airflow_Pipeline.md](docs/06_Airflow_Pipeline.md) | Airflow ML pipeline orchestration |
 
 ---
 

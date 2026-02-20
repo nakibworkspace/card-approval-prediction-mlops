@@ -291,3 +291,8 @@ logs/
 *.log
 reports/
 .scannerwork/
+
+# Airflow
+airflow-logs/
+dags/__pycache__/
+dags/*.pyc
