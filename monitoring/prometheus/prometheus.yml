@@ -1,0 +1,57 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'card-approval-prediction'
+    environment: 'production'
+
+# Alertmanager configuration (optional)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets: ['alertmanager:9093']
+
+# Load rules once and periodically evaluate them
+rule_files:
+  # - "alerts/*.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # FastAPI Application
+  - job_name: 'card-approval-api'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['api:8000']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'card-approval-api'
+
+  # MLflow Server
+  - job_name: 'mlflow'
+    static_configs:
+      - targets: ['mlflow:5000']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'mlflow-server'
+
+  # PostgreSQL Exporter (optional - requires postgres_exporter)
+  # - job_name: 'postgres-api'
+  #   static_configs:
+  #     - targets: ['postgres-exporter-api:9187']
+
+  # Redis Exporter (optional - requires redis_exporter)
+  # - job_name: 'redis'
+  #   static_configs:
+  #     - targets: ['redis-exporter:9121']
+
+  # Docker containers (optional - requires cAdvisor)
+  # - job_name: 'docker'
+  #   static_configs:
+  #     - targets: ['cadvisor:8080']

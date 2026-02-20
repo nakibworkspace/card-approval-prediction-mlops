@@ -1,0 +1,100 @@
+"""Logging configuration for the application."""
+import json
+import sys
+
+from loguru import logger
+
+from app.core.config import get_settings
+
+settings = get_settings()
+
+
+def get_trace_context() -> dict:
+    """Get current trace context for log correlation."""
+    try:
+        from app.core.tracing import get_current_span_id, get_current_trace_id
+
+        trace_id = get_current_trace_id()
+        span_id = get_current_span_id()
+        if trace_id:
+            return {"trace_id": trace_id, "span_id": span_id}
+    except Exception:
+        pass
+    return {}
+
+
+def json_serializer(record):
+    """Serialize log record to JSON for Loki/Alloy parsing"""
+    subset = {
+        "time": record["time"].strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+        "level": record["level"].name,
+        "message": record["message"],
+        "name": record["name"],
+        "function": record["function"],
+        "line": record["line"],
+    }
+    # Add exception info if present
+    if record["exception"]:
+        subset["exception"] = str(record["exception"])
+    # Add extra fields
+    if record["extra"]:
+        subset["extra"] = record["extra"]
+    # Add trace context for correlation with Tempo
+    trace_ctx = get_trace_context()
+    if trace_ctx:
+        subset["trace_id"] = trace_ctx.get("trace_id")
+        subset["span_id"] = trace_ctx.get("span_id")
+    return json.dumps(subset)
+
+
+def json_sink(message):
+    """Custom sink that outputs JSON format"""
+    record = message.record
+    serialized = json_serializer(record)
+    sys.stdout.write(serialized + "\n")
+    sys.stdout.flush()
+
+
+def setup_logging():
+    """Configure logging for the application"""
+
+    # Remove default handler
+    logger.remove()
+
+    # Check if running in Kubernetes
+    is_kubernetes = settings.LOG_FORMAT == "json"
+
+    if is_kubernetes:
+        # JSON handler for Kubernetes/Loki
+        logger.add(
+            json_sink,
+            level=settings.LOG_LEVEL,
+            format="{message}",
+        )
+    else:
+        # Console handler
+        logger.add(
+            sys.stdout,
+            format=(
+                "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
+                "<level>{level: <8}</level> | "
+                "<cyan>{name}</cyan>:<cyan>{function}</cyan> - "
+                "<level>{message}</level>"
+            ),
+            level=settings.LOG_LEVEL,
+            colorize=True,
+        )
+
+    # File handler
+    logger.add(
+        settings.LOG_FILE,
+        format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function} - {message}",
+        level=settings.LOG_LEVEL,
+        rotation="500 MB",
+        retention="10 days",
+        compression="zip",
+    )
+
+    logger.info(
+        f"Logging configured: level={settings.LOG_LEVEL}, format={'json' if is_kubernetes else 'text'}"  # noqa: 503
+    )

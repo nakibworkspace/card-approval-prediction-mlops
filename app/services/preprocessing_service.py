@@ -1,0 +1,118 @@
+"""Preprocessing service for encoding categorical features before prediction"""
+
+import json
+from functools import lru_cache
+from pathlib import Path
+from typing import List, Optional
+
+import joblib
+import mlflow
+import pandas as pd
+from loguru import logger
+
+from app.core.config import get_settings
+from app.core.tracing import get_tracer
+
+
+class PreprocessingService:
+    """Service for preprocessing input data before model prediction"""
+
+    def __init__(self, run_id: Optional[str] = None):
+        """Initialize preprocessing service and load artifacts"""
+        self.settings = get_settings()
+        self.run_id = run_id
+
+        # Try loading from embedded model path first, fallback to MLflow
+        if self.settings.MODEL_PATH:
+            self.scaler, self.pca, self.feature_names = self._load_from_local_path()
+        else:
+            self.scaler, self.pca, self.feature_names = self._load_from_mlflow(run_id)
+
+        logger.info(f"Preprocessing service ready ({len(self.feature_names)} features)")
+
+    def _load_from_local_path(self):
+        """Load preprocessing artifacts from embedded model path"""
+        model_path = Path(self.settings.MODEL_PATH)
+        preprocessing_path = model_path / "preprocessors"
+
+        logger.info(f"Loading preprocessing from local path: {preprocessing_path}")
+
+        if not preprocessing_path.exists():
+            logger.warning(f"Preprocessing path not found: {preprocessing_path}, falling back to MLflow")
+            return self._load_from_mlflow(self.run_id)
+
+        # Load artifacts
+        scaler = joblib.load(preprocessing_path / "scaler.pkl")
+        pca = joblib.load(preprocessing_path / "pca.pkl")
+
+        with open(preprocessing_path / "feature_names.json", "r", encoding="utf-8") as f:
+            feature_names = json.load(f)["feature_names"]
+
+        logger.info(f"Loaded preprocessing from embedded model (run_id: {self.run_id})")
+        return scaler, pca, feature_names
+
+    def _load_from_mlflow(self, run_id: str):
+        """Load preprocessing artifacts from MLflow run"""
+        logger.info(f"Loading preprocessing from MLflow (run_id: {run_id})")
+        mlflow.set_tracking_uri(self.settings.MLFLOW_TRACKING_URI)
+        artifact_uri = f"runs:/{run_id}/preprocessors"
+        local_path = Path(mlflow.artifacts.download_artifacts(artifact_uri))
+
+        # Load artifacts
+        scaler = joblib.load(local_path / "scaler.pkl")
+        pca = joblib.load(local_path / "pca.pkl")
+
+        with open(local_path / "feature_names.json", "r", encoding="utf-8") as f:
+            feature_names = json.load(f)["feature_names"]
+
+        return scaler, pca, feature_names
+
+    def align_features(self, features: pd.DataFrame, reference_columns: List[str]) -> pd.DataFrame:
+        """Align DataFrame features with reference columns"""
+        for col in reference_columns:
+            if col not in features.columns:
+                features[col] = 0
+        return features[reference_columns]
+
+    def preprocess(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Preprocess input for model prediction: encode → align → scale → PCA"""
+        tracer = get_tracer()
+
+        with tracer.start_as_current_span("preprocessing") as parent_span:
+            parent_span.set_attribute("feature_count", len(self.feature_names))
+            parent_span.set_attribute("input_rows", len(df))
+
+            # Drop ID column
+            if "ID" in df.columns:
+                df = df.drop("ID", axis=1)
+
+            # One-hot encode
+            with tracer.start_as_current_span("preprocessing.encode") as span:
+                df_encoded = pd.get_dummies(df.copy(), drop_first=True)
+                span.set_attribute("encoded_features", len(df_encoded.columns))
+
+            # Align features
+            with tracer.start_as_current_span("preprocessing.align") as span:
+                df_aligned = self.align_features(df_encoded, self.feature_names)
+                span.set_attribute("aligned_features", len(df_aligned.columns))
+
+            # Scale
+            with tracer.start_as_current_span("preprocessing.scale") as span:
+                df_scaled = self.scaler.transform(df_aligned)
+                span.set_attribute("scaler_type", "StandardScaler")
+
+            # PCA
+            with tracer.start_as_current_span("preprocessing.pca") as span:
+                df_pca = self.pca.transform(df_scaled)
+                span.set_attribute("n_components", df_pca.shape[1])
+
+            # Return as DataFrame with PC column names
+            pc_columns = [f"PC{i+1}" for i in range(df_pca.shape[1])]
+            parent_span.set_attribute("output_features", len(pc_columns))
+            return pd.DataFrame(df_pca, columns=pc_columns, index=df.index)
+
+
+@lru_cache(maxsize=1)
+def get_preprocessing_service(run_id: Optional[str] = None) -> PreprocessingService:
+    """Get or create preprocessing service instance (cached singleton)"""
+    return PreprocessingService(run_id)

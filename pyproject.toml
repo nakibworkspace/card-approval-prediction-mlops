@@ -1,0 +1,90 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "card-approval-prediction"
+version = "1.0.0"
+description = "Card Approval Prediction API"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi==0.104.1",
+    "uvicorn[standard]==0.24.0",
+    "pydantic==2.5.0",
+    "pydantic-settings==2.1.0",
+    "mlflow==2.9.2",
+    "boto3>=1.28.0",
+    "botocore>=1.31.0",
+    "pandas==2.1.3",
+    "numpy==1.26.2",
+    "scipy>=1.11.0,<2.0.0",
+    "scikit-learn==1.3.2",
+    "imbalanced-learn>=0.11.0,<1.0.0",
+    "xgboost==3.1.2",
+    "lightgbm==4.1.0",
+    "catboost==1.2.2",
+    "joblib==1.3.2",
+    "psutil==5.9.1",
+    "loguru==0.7.2",
+    "pytest==7.4.3",
+    "pytest-asyncio==0.21.1",
+    "pytest-cov==4.1.0",
+    "httpx==0.25.2",
+    "python-multipart==0.0.6",
+    "prometheus-client==0.19.0",
+    "setuptools<81",
+    # OpenTelemetry for distributed tracing
+    "opentelemetry-api==1.22.0",
+    "opentelemetry-sdk==1.22.0",
+    "opentelemetry-instrumentation-fastapi==0.43b0",
+    "opentelemetry-instrumentation-requests==0.43b0",
+    "opentelemetry-instrumentation-logging==0.43b0",
+    "opentelemetry-exporter-otlp==1.22.0",
+    # DVC and Evidently
+    "dvc[s3]>=3.0.0",
+    "evidently>=0.4.0",
+]
+
+[tool.black]
+line-length = 120
+
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 120
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+skip_gitignore = true
+
+[tool.bandit]
+exclude_dirs = [
+    "tests",
+    ".venv",
+    "venv",
+    "env",
+]
+skips = ["B101", "B601"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-v --cov=app --cov=training --cov-report=term-missing --cov-report=html"

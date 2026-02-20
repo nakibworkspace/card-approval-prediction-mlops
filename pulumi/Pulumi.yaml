@@ -1,0 +1,3 @@
+name: card-approval-prediction-aws
+runtime: python
+description: Card Approval Prediction MLOps Infrastructure on AWS

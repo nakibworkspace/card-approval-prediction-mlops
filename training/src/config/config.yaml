@@ -1,0 +1,143 @@
+# Credit Card Approval Prediction - Configuration
+
+# Data Configuration
+data:
+  raw_data_dir: "data/raw"
+  processed_data_dir: "data/processed"
+  test_size: 0.2
+  validation_size: 0.1
+  random_state: 42
+
+# Feature Engineering
+features:
+  categorical_features:
+    - "employment_status"
+    - "housing_type"
+    - "education_level"
+    - "marital_status"
+    - "gender"
+    - "owns_car"
+    - "owns_realty"
+    - "occupation"
+
+  numerical_features:
+    - "age"
+    - "annual_income"
+    - "credit_score"
+    - "employment_years"
+    - "debt_to_income_ratio"
+    - "num_existing_credit_cards"
+    - "total_credit_limit"
+    - "num_children"
+    - "num_family_members"
+
+  target: "approval_status"
+
+  # Feature engineering options
+  scaling_method: "standard"  # standard, minmax, robust
+  encoding_method: "onehot"   # onehot, label
+  handle_missing: "median"    # median, mean, mode
+
+# Model Configuration
+model:
+  # Models to train
+  models_to_train:
+    - "AdaBoost"
+    - "XGBoost"
+    - "LightGBM"
+    - "CatBoost"
+    - "Naive Bayes"
+
+  hyperparameters:
+    AdaBoost:
+      n_estimators: 100
+      learning_rate: 1.0
+      random_state: 42
+
+    XGBoost:
+      n_estimators: 500
+      max_depth: 5
+      learning_rate: 0.1
+      min_child_weight: 1
+      subsample: 0.8
+      colsample_bytree: 0.8
+      scale_pos_weight: 217  # 36290/167 = ratio of negative to positive
+      random_state: 42
+      eval_metric: "logloss"
+
+    LightGBM:
+      n_estimators: 250
+      max_depth: 8
+      learning_rate: 0.02
+      scale_pos_weight: 217  # Handle class imbalance
+      random_state: 42
+      verbose: -1
+
+    CatBoost:
+      iterations: 250
+      depth: 8
+      learning_rate: 0.02
+      random_state: 42
+      verbose: 0
+
+    "Naive Bayes": {}
+
+# Training Configuration
+training:
+  cross_validation:
+    enabled: true
+    n_folds: 5
+    stratified: true
+
+  class_balance:
+    method: "smote"  # smote, undersample, oversample, none
+
+  early_stopping:
+    enabled: true
+    patience: 10
+    metric: "auc"
+
+# Evaluation Metrics
+evaluation:
+  metrics:
+    - "accuracy"
+    - "precision"
+    - "recall"
+    - "f1_score"
+    - "roc_auc"
+
+  threshold:
+    optimization_metric: "f1_score"
+    default: 0.5
+
+# MLflow Configuration
+mlflow:
+  tracking_uri: "http://127.0.0.1:5000"
+  experiment_name: "credit_card_approval_model_training"
+  enable_autolog: false
+
+  # Model Registry
+  registry:
+    model_name: "card_approval_model"
+
+  # What to log
+  log_params: true
+  log_metrics: true
+  log_model: true
+  log_artifacts: true
+
+  # Artifacts to save
+  save_confusion_matrix: true
+  save_roc_curve: true
+  save_feature_importance: true
+  save_shap_values: false
+
+# Output Configuration
+output:
+  model_dir: "models/"
+  figures_dir: "outputs/"
+  reports_dir: "outputs/reports/"
+  metrics_dir: "outputs/metrics/"
+
+# Reproducibility
+seed: 42
