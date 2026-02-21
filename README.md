@@ -412,6 +412,7 @@ curl -X POST "http://localhost:8000/api/v1/predict" \
 | [docs/02_MLflow_Training.md](docs/02_MLflow_Training.md) | Model training guide |
 | [docs/05_Monitoring.md](docs/05_Monitoring.md) | Monitoring guide |
 | [docs/06_Airflow_Pipeline.md](docs/06_Airflow_Pipeline.md) | Airflow ML pipeline orchestration |
+| [docs/07_Nginx_Configuration.md](docs/07_Nginx_Configuration.md) | Nginx reverse proxy setup |
 
 ---
 

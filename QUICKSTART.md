@@ -60,10 +60,10 @@ docker compose exec api bash -c "cd /opt/airflow/training && python scripts/run_
 
 ```bash
 # Test health
-curl http://localhost:8000/health
+curl http://localhost/health
 
 # Test prediction
-curl -X POST http://localhost:8000/api/v1/predict \
+curl -X POST http://localhost/api/v1/predict \
   -H "Content-Type: application/json" \
   -d '{
     "ID": 5008804,
@@ -103,11 +103,12 @@ curl -X POST http://localhost:8000/api/v1/predict \
 
 | Service | URL | Credentials |
 |---------|-----|-------------|
-| API Docs | http://localhost:8000/docs | None |
-| Airflow | http://localhost:8080 | admin/admin |
-| MLflow | http://localhost:5000 | None |
-| Grafana | http://localhost:3001 | admin/admin |
-| Prometheus | http://localhost:9090 | None |
+| Nginx (Gateway) | http://localhost | None |
+| API Docs | http://localhost/docs | None |
+| Airflow | http://localhost/airflow/ | admin/admin |
+| MLflow | http://localhost/mlflow/ | None |
+| Grafana | http://localhost/grafana/ | admin/admin |
+| Prometheus | http://localhost/prometheus/ | None |
 
 ## Troubleshooting
 
