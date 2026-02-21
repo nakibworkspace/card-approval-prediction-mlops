@@ -23,16 +23,13 @@ RUN mkdir -p /app/reports
 # Copy the rest of the application
 COPY . .
 
-# Copy model artifacts
-# This embeds the model into the image for consistent versioning
-COPY models /app/models
-
-# Create logs directory
-RUN mkdir -p /app/logs
+# Create model and logs directories
+# Models will be downloaded from MLflow at runtime if not present
+RUN mkdir -p /app/models /app/logs
 
 # Set environment variables
 ENV MODEL_PATH=/app/models
-ENV AWS_DEFAULT_REGION=us-east-1
+ENV AWS_DEFAULT_REGION=ap-southeast-1
 
 EXPOSE 8000
 

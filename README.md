@@ -212,7 +212,12 @@ card-approval-prediction/
 ├── .pre-commit-config.yaml     # Pre-commit hooks
 ├── verify_transformation.sh    # Transformation verification script (NEW)
 │
+├── test_local.sh               # Automated local testing script
+├── test_payload.json           # Sample prediction payload for testing
 ├── README.md                   # This file
+├── README_DOCKER_COMPOSE.md    # Docker Compose guide
+├── README_AIRFLOW.md           # Airflow quick start
+├── LOCAL.md                    # Local testing guide (NEW)
 ├── README-AWS.md               # Detailed AWS documentation (NEW)
 ├── TRANSFORMATION_SUMMARY.md   # Transformation details (NEW)
 ├── MIGRATION_GUIDE.md          # GCP to AWS migration guide (NEW)
@@ -395,8 +400,11 @@ curl -X POST "http://localhost:8000/api/v1/predict" \
 
 | Document | Description |
 |----------|-------------|
+| [QUICKSTART.md](QUICKSTART.md) | **5-minute quick start** - Get running fast |
 | [README.md](README.md) | **Main documentation** - Start here |
-| [README_DOCKER_COMPOSE.md](README_DOCKER_COMPOSE.md) | Run locally with Docker Compose |
+| [README_DOCKER_SETUP.md](README_DOCKER_SETUP.md) | **Docker Compose guide** - Local vs AWS modes |
+| [LOCAL.md](LOCAL.md) | **Local testing guide** - Test with Docker before deployment |
+| [README_DOCKER_COMPOSE.md](README_DOCKER_COMPOSE.md) | Run locally with Docker Compose (detailed) |
 | [README_AIRFLOW.md](README_AIRFLOW.md) | Airflow ML pipeline quick start |
 | [FILE_PURPOSES.md](FILE_PURPOSES.md) | Purpose of every file in the project |
 | [Lab-plannings.md](Lab-plannings.md) | Lab requirements (6 labs) |

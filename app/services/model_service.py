@@ -32,8 +32,12 @@ class ModelService:
             else:
                 self._load_from_mlflow()
         except Exception as e:
-            logger.error(f"Failed to load model: {e}")
-            raise RuntimeError(f"Model loading failed: {e}") from e
+            logger.warning(f"Failed to load model: {e}")
+            logger.warning("API will start without a model. Train a model first using Airflow or training scripts.")
+            self.model = None
+            self.sklearn_model = None
+            self.version = "none"
+            self.run_id = "none"
 
     def _load_from_local_path(self) -> None:
         """Load model from local path (embedded in Docker image)."""
@@ -146,7 +150,10 @@ class ModelService:
     def predict(self, features):
         """Make prediction with loaded model"""
         if self.model is None:
-            raise RuntimeError("Model not loaded")
+            raise RuntimeError(
+                "No model loaded. Please train a model first using Airflow DAG or training scripts. "
+                "See LOCAL.md for instructions."
+            )
 
         tracer = get_tracer()
         with tracer.start_as_current_span("model_inference.predict") as span:

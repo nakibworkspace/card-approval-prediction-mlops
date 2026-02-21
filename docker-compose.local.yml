@@ -69,7 +69,7 @@ services:
     restart: unless-stopped
 
   # ============================================
-  # MLflow Server (AWS S3 Backend)
+  # MLflow Server
   # ============================================
   mlflow:
     image: ghcr.io/mlflow/mlflow:v2.9.2
@@ -77,15 +77,17 @@ services:
     command: >
       mlflow server
       --backend-store-uri postgresql://mlflow_user:${POSTGRES_MLFLOW_PASSWORD:-mlflow_password}@postgres-mlflow:5432/mlflow
-      --default-artifact-root s3://${S3_BUCKET_NAME}/mlflow-artifacts
+      --default-artifact-root /mlflow/artifacts
       --host 0.0.0.0
       --port 5000
     environment:
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
       AWS_DEFAULT_REGION: ${AWS_REGION:-us-east-1}
     ports:
       - "5000:5000"
+    volumes:
+      - mlflow-artifacts:/mlflow/artifacts
     depends_on:
       postgres-mlflow:
         condition: service_healthy
@@ -217,7 +219,7 @@ services:
           --lastname User \
           --role Admin \
           --email admin@example.com \
-          --password ${AIRFLOW_ADMIN_PASSWORD:-admin} || true
+          --password ${AIRFLOW_ADMIN_PASSWORD:-admin}
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:${POSTGRES_AIRFLOW_PASSWORD:-airflow_password}@postgres-airflow/airflow
@@ -255,13 +257,13 @@ services:
       MODEL_STAGE: Production
       
       # AWS
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
       AWS_DEFAULT_REGION: ${AWS_REGION:-us-east-1}
-      S3_BUCKET_NAME: ${S3_BUCKET_NAME}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-}
       
-      # Tracing
-      OTEL_ENABLED: ${OTEL_ENABLED:-true}
+      # Tracing (disabled by default for local)
+      OTEL_ENABLED: ${OTEL_ENABLED:-false}
       OTEL_SERVICE_NAME: card-approval-api
       OTEL_EXPORTER_ENDPOINT: http://tempo:4317
       OTEL_SAMPLING_RATE: 1.0
@@ -309,10 +311,10 @@ services:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
       GF_USERS_ALLOW_SIGN_UP: false
-      GF_SERVER_ROOT_URL: http://localhost:3000
+      GF_SERVER_ROOT_URL: http://localhost:3001
       GF_INSTALL_PLUGINS: grafana-piechart-panel
     ports:
-      - "3000:3000"
+      - "3001:3000"
     volumes:
       - grafana-data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
@@ -391,6 +393,7 @@ volumes:
   postgres-mlflow-data:
   postgres-airflow-data:
   redis-data:
+  mlflow-artifacts:
   prometheus-data:
   grafana-data:
   loki-data:
