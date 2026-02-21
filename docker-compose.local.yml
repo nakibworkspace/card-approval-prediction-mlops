@@ -122,7 +122,9 @@ services:
   # Airflow Webserver
   # ============================================
   airflow-webserver:
-    image: apache/airflow:2.8.0-python3.11
+    build:
+      context: ./airflow
+      dockerfile: Dockerfile
     container_name: airflow-webserver
     command: webserver
     environment:
@@ -166,7 +168,9 @@ services:
   # Airflow Scheduler
   # ============================================
   airflow-scheduler:
-    image: apache/airflow:2.8.0-python3.11
+    build:
+      context: ./airflow
+      dockerfile: Dockerfile
     container_name: airflow-scheduler
     command: scheduler
     environment:
@@ -206,7 +210,9 @@ services:
   # Airflow Init (DB migrations & admin user)
   # ============================================
   airflow-init:
-    image: apache/airflow:2.8.0-python3.11
+    build:
+      context: ./airflow
+      dockerfile: Dockerfile
     container_name: airflow-init
     entrypoint: /bin/bash
     command:
@@ -311,7 +317,7 @@ services:
   # Prometheus (Metrics)
   # ============================================
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.5.0
     container_name: prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -332,7 +338,7 @@ services:
   # Grafana (Visualization)
   # ============================================
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:12.3.0
     container_name: grafana
     environment:
       GF_SECURITY_ADMIN_USER: admin
@@ -358,7 +364,7 @@ services:
   # Grafana Loki (Logs)
   # ============================================
   loki:
-    image: grafana/loki:latest
+    image: grafana/loki:3.4.6
     container_name: loki
     command: -config.file=/etc/loki/local-config.yaml
     ports:
@@ -374,7 +380,7 @@ services:
   # Promtail (Log Collector)
   # ============================================
   promtail:
-    image: grafana/promtail:latest
+    image: grafana/promtail:3.4.6
     container_name: promtail
     command: -config.file=/etc/promtail/config.yml
     volumes:
@@ -391,7 +397,7 @@ services:
   # Grafana Tempo (Tracing)
   # ============================================
   tempo:
-    image: grafana/tempo:latest
+    image: grafana/tempo:2.8.0
     container_name: tempo
     user: root
     command: [ "-config.file=/etc/tempo.yaml" ]
