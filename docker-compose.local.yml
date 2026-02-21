@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # ============================================
   # PostgreSQL for FastAPI (Predictions)
@@ -72,7 +70,9 @@ services:
   # MLflow Server
   # ============================================
   mlflow:
-    image: ghcr.io/mlflow/mlflow:v2.9.2
+    build:
+      context: ./mlflow
+      dockerfile: Dockerfile
     container_name: mlflow
     command: >
       mlflow server
