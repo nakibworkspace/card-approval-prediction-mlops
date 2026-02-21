@@ -12,11 +12,12 @@ from pathlib import Path
 import mlflow
 import pandas as pd
 
-# Reuse existing evaluation utilities from training module
-from training.src.utils.metrics import calculate_metrics
-
-# Add project root to path for imports
+# Add paths for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent / "training"))
+
+# Reuse existing evaluation utilities from training module
+from src.utils.metrics import calculate_metrics
 
 
 def load_mlflow_model(tracking_uri: str, model_name: str, stage: str):

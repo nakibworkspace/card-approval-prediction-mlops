@@ -23,7 +23,7 @@ class PreprocessingService:
         self.run_id = run_id
 
         # Try loading from embedded model path first, fallback to MLflow
-        if self.settings.MODEL_PATH:
+        if self.settings.MODEL_PATH and self.settings.MODEL_PATH not in ("none", ""):
             self.scaler, self.pca, self.feature_names = self._load_from_local_path()
         else:
             self.scaler, self.pca, self.feature_names = self._load_from_mlflow(run_id)

@@ -31,7 +31,8 @@ class MLflowArtifactManager:
             artifact_path: Path within MLflow run to store artifacts
         """
         try:
-            artifact_dir = Path("preprocessors")
+            import tempfile
+            artifact_dir = Path(tempfile.mkdtemp()) / "preprocessors"
             artifact_dir.mkdir(exist_ok=True)
 
             # Save scaler
@@ -60,6 +61,7 @@ class MLflowArtifactManager:
 
         except Exception as e:
             logger.error(f"Failed to log preprocessing artifacts: {e}")
+            raise
 
     @staticmethod
     def load_preprocessing_artifacts(run_id: str, artifact_path: str = "preprocessors") -> Dict:

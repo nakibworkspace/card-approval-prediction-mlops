@@ -9,6 +9,9 @@ RUN apt-get update && \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+RUN mkdir -p /opt/airflow/training/data /opt/airflow/training/models /opt/airflow/training/outputs \
+    && chown -R airflow:root /opt/airflow/training
+
 USER airflow
 
 # Install Python dependencies directly

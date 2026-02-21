@@ -77,7 +77,9 @@ services:
     command: >
       mlflow server
       --backend-store-uri postgresql://mlflow_user:${POSTGRES_MLFLOW_PASSWORD:-mlflow_password}@postgres-mlflow:5432/mlflow
-      --default-artifact-root /mlflow/artifacts
+      --default-artifact-root mlflow-artifacts:/
+      --artifacts-destination /mlflow/artifacts
+      --serve-artifacts
       --host 0.0.0.0
       --port 5000
     environment:
@@ -142,6 +144,9 @@ services:
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_DEFAULT_REGION: ${AWS_REGION:-us-east-1}
       S3_BUCKET_NAME: ${S3_BUCKET_NAME}
+      # Kaggle credentials
+      KAGGLE_USERNAME: ${KAGGLE_USERNAME}
+      KAGGLE_KEY: ${KAGGLE_KEY}
     ports:
       - "8080:8080"
     volumes:
@@ -150,6 +155,9 @@ services:
       - ./scripts:/opt/airflow/scripts
       - ./requirements.txt:/opt/airflow/requirements.txt
       - airflow-logs:/opt/airflow/logs
+      - training-data:/opt/airflow/training/data
+      - training-models:/opt/airflow/training/models
+      - training-outputs:/opt/airflow/training/outputs
     depends_on:
       postgres-airflow:
         condition: service_healthy
@@ -186,12 +194,18 @@ services:
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_DEFAULT_REGION: ${AWS_REGION:-us-east-1}
       S3_BUCKET_NAME: ${S3_BUCKET_NAME}
+      # Kaggle credentials
+      KAGGLE_USERNAME: ${KAGGLE_USERNAME}
+      KAGGLE_KEY: ${KAGGLE_KEY}
     volumes:
       - ./dags:/opt/airflow/dags
       - ./training:/opt/airflow/training
       - ./scripts:/opt/airflow/scripts
       - ./requirements.txt:/opt/airflow/requirements.txt
       - airflow-logs:/opt/airflow/logs
+      - training-data:/opt/airflow/training/data
+      - training-models:/opt/airflow/training/models
+      - training-outputs:/opt/airflow/training/outputs
     depends_on:
       postgres-airflow:
         condition: service_healthy
@@ -433,4 +447,7 @@ volumes:
   loki-data:
   tempo-data:
   airflow-logs:
+  training-data:
+  training-models:
+  training-outputs:
   nginx-logs:

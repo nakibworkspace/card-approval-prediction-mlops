@@ -27,7 +27,7 @@ class ModelService:
     def _load_model(self) -> None:
         """Load model from local path or MLflow registry."""
         try:
-            if self.settings.MODEL_PATH:
+            if self.settings.MODEL_PATH and self.settings.MODEL_PATH not in ("none", ""):
                 self._load_from_local_path()
             else:
                 self._load_from_mlflow()
@@ -107,7 +107,6 @@ class ModelService:
 
     def _load_from_mlflow(self) -> None:
         """Load model from MLflow registry (original behavior)."""
-        self._setup_credentials()
         self._fetch_model_version()
         self._load_model_artifacts_from_mlflow()
 
@@ -199,7 +198,7 @@ class ModelService:
             "version": self.version,
             "run_id": self.run_id,
             "loaded": self.model is not None,
-            "source": "local" if self.settings.MODEL_PATH else "mlflow",
+            "source": "local" if self.settings.MODEL_PATH and self.settings.MODEL_PATH not in ("none", "") else "mlflow",
         }
 
 

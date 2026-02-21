@@ -28,7 +28,6 @@ COPY . .
 RUN mkdir -p /app/models /app/logs
 
 # Set environment variables
-ENV MODEL_PATH=/app/models
 ENV AWS_DEFAULT_REGION=ap-southeast-1
 
 EXPOSE 8000

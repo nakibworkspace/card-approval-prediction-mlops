@@ -80,12 +80,6 @@ train_models = BashOperator(
         --model-name card_approval_model \
         --metric F1-Score
     """,
-    env={
-        "MLFLOW_TRACKING_URI": "{{ var.value.mlflow_tracking_uri }}",
-        "AWS_ACCESS_KEY_ID": "{{ var.value.aws_access_key_id }}",
-        "AWS_SECRET_ACCESS_KEY": "{{ var.value.aws_secret_access_key }}",
-        "AWS_DEFAULT_REGION": "{{ var.value.aws_region }}",
-    },
     dag=dag,
 )
 
@@ -95,25 +89,13 @@ evaluate_model = BashOperator(
     bash_command="""
     python /opt/airflow/scripts/evaluate_model.py \
         --model-name card_approval_model \
-        --stage Production \
-        --min-f1 0.75 \
-        --mlflow-uri ${MLFLOW_TRACKING_URI}
+        --model-stage Production \
+        --threshold 0.75 \
+        --tracking-uri ${MLFLOW_TRACKING_URI} \
+        --data-dir /opt/airflow/training/data/processed
     """,
-    env={
-        "MLFLOW_TRACKING_URI": "{{ var.value.mlflow_tracking_uri }}",
-        "AWS_ACCESS_KEY_ID": "{{ var.value.aws_access_key_id }}",
-        "AWS_SECRET_ACCESS_KEY": "{{ var.value.aws_secret_access_key }}",
-    },
-    dag=dag,
-)
-
-# Task 6: Send notification
-send_notification = PythonOperator(
-    task_id="send_notification",
-    python_callable=lambda: print("Pipeline completed successfully!"),
-    trigger_rule=TriggerRule.ALL_DONE,
     dag=dag,
 )
 
 # Define task dependencies
-download_data >> run_eda >> preprocess_data >> train_models >> evaluate_model >> send_notification
+download_data >> run_eda >> preprocess_data >> train_models >> evaluate_model
