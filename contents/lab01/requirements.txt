@@ -1,0 +1,21 @@
+# Airflow
+apache-airflow==2.8.0
+apache-airflow-providers-amazon
+
+# MLflow
+mlflow
+
+# ML Libraries
+pandas
+numpy
+scikit-learn
+xgboost
+lightgbm
+imbalanced-learn
+
+# Visualization
+matplotlib
+seaborn
+
+# AWS
+boto3

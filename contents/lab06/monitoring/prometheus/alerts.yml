@@ -1,0 +1,30 @@
+groups:
+  - name: api_alerts
+    interval: 30s
+    rules:
+      - alert: HighErrorRate
+        expr: rate(api_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value }} errors/sec"
+      
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, rate(api_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High latency detected"
+          description: "P95 latency is {{ $value }} seconds"
+      
+      - alert: LowApprovalRate
+        expr: rate(model_predictions_total{decision="APPROVED"}[1h]) / rate(model_predictions_total[1h]) < 0.1
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Unusually low approval rate"
+          description: "Approval rate is {{ $value | humanizePercentage }}"

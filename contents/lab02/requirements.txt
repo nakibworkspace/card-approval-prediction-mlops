@@ -1,0 +1,28 @@
+# Airflow (from Lab 01)
+apache-airflow==2.8.0
+apache-airflow-providers-amazon
+
+# MLflow (from Lab 01)
+mlflow
+
+# ML Libraries (from Lab 01)
+pandas
+numpy
+scikit-learn
+xgboost
+lightgbm
+imbalanced-learn
+
+# Visualization (from Lab 01)
+matplotlib
+seaborn
+
+# AWS (from Lab 01)
+boto3
+
+# NEW in Lab 02: Pulumi
+pulumi
+pulumi-aws
+
+# NEW in Lab 02: DVC
+dvc[s3]

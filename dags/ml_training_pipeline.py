@@ -107,46 +107,7 @@ evaluate_model = BashOperator(
     dag=dag,
 )
 
-
-# Task 6: Check if deployment should be triggered
-def check_deployment_needed(**context):
-    """Check if model performance improved and deployment is needed"""
-    # This would check MLflow metrics to see if new model is better
-    # For now, always deploy if evaluation passed
-    return "trigger_deployment"
-
-
-check_deployment = BranchPythonOperator(
-    task_id="check_deployment",
-    python_callable=check_deployment_needed,
-    dag=dag,
-)
-
-# Task 7: Trigger GitHub Actions deployment
-trigger_deployment = BashOperator(
-    task_id="trigger_deployment",
-    bash_command="""
-    curl -X POST \
-        -H "Accept: application/vnd.github.v3+json" \
-        -H "Authorization: token ${GITHUB_TOKEN}" \
-        https://api.github.com/repos/${GITHUB_REPO}/dispatches \
-        -d '{"event_type":"model_updated"}'
-    """,
-    env={
-        "GITHUB_TOKEN": "{{ var.value.github_token }}",
-        "GITHUB_REPO": "{{ var.value.github_repo }}",
-    },
-    dag=dag,
-)
-
-# Task 8: Skip deployment
-skip_deployment = BashOperator(
-    task_id="skip_deployment",
-    bash_command='echo "Deployment skipped - model did not improve"',
-    dag=dag,
-)
-
-# Task 9: Send notification
+# Task 6: Send notification
 send_notification = PythonOperator(
     task_id="send_notification",
     python_callable=lambda: print("Pipeline completed successfully!"),
@@ -155,6 +116,4 @@ send_notification = PythonOperator(
 )
 
 # Define task dependencies
-download_data >> run_eda >> preprocess_data >> train_models >> evaluate_model
-evaluate_model >> check_deployment >> [trigger_deployment, skip_deployment]
-[trigger_deployment, skip_deployment] >> send_notification
+download_data >> run_eda >> preprocess_data >> train_models >> evaluate_model >> send_notification

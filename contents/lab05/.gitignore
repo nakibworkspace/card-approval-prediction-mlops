@@ -1,0 +1,69 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Environment
+.env
+.env.local
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Airflow
+logs/
+airflow.db
+airflow.cfg
+unittests.cfg
+
+# MLflow
+mlruns/
+mlflow.db
+
+# DVC
+.dvc/cache
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data (tracked by DVC)
+training/data/raw/*
+training/data/processed/*
+training/models/*
+!training/data/raw/.gitkeep
+!training/data/processed/.gitkeep
+
+# Pulumi
+pulumi/Pulumi.*.yaml
+!pulumi/Pulumi.yaml

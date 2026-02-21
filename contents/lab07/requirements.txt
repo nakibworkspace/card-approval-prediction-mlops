@@ -1,0 +1,74 @@
+# Complete MLOps System Requirements
+# This includes all dependencies from Labs 01-06
+
+# ============================================
+# Lab 01: Airflow & MLflow
+# ============================================
+apache-airflow==2.8.0
+apache-airflow-providers-amazon
+mlflow
+
+# ============================================
+# Lab 01: ML Libraries
+# ============================================
+pandas
+numpy
+scikit-learn
+xgboost
+lightgbm
+imbalanced-learn
+matplotlib
+seaborn
+
+# ============================================
+# Lab 02: Infrastructure & Data Versioning
+# ============================================
+pulumi
+pulumi-aws
+dvc[s3]
+boto3
+
+# ============================================
+# Lab 03: Environment Management
+# ============================================
+python-dotenv
+
+# ============================================
+# Lab 04: FastAPI & API
+# ============================================
+fastapi
+uvicorn[standard]
+pydantic
+
+# ============================================
+# Lab 04: Testing
+# ============================================
+httpx
+pytest
+pytest-asyncio
+
+# ============================================
+# Lab 05: Code Quality & Security
+# ============================================
+flake8
+black
+pytest-cov
+bandit
+safety
+
+# ============================================
+# Lab 06: Monitoring & Observability
+# ============================================
+prometheus-client
+evidently
+
+# ============================================
+# Optional: Caching & Performance
+# ============================================
+redis
+
+# ============================================
+# Optional: Additional Tools
+# ============================================
+# jupyter  # For notebook development
+# ipython  # Enhanced Python shell
