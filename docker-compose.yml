@@ -397,7 +397,7 @@ services:
       - "4317:4317"   # OTLP gRPC
       - "4318:4318"   # OTLP HTTP
     volumes:
-      - ./monitoring/tempo/tempo-config.yml:/etc/tempo.yaml
+      - ./monitoring/tempo/tempo-config.yml:/etc/tempo.yaml:ro
       - tempo-data:/tmp/tempo
     networks:
       - app-network

@@ -262,8 +262,8 @@ services:
       AWS_DEFAULT_REGION: ${AWS_REGION:-us-east-1}
       S3_BUCKET_NAME: ${S3_BUCKET_NAME:-}
       
-      # Tracing (disabled by default for local)
-      OTEL_ENABLED: ${OTEL_ENABLED:-false}
+      # Tracing
+      OTEL_ENABLED: ${OTEL_ENABLED:-true}
       OTEL_SERVICE_NAME: card-approval-api
       OTEL_EXPORTER_ENDPOINT: http://tempo:4317
       OTEL_SAMPLING_RATE: 1.0
@@ -393,13 +393,14 @@ services:
   tempo:
     image: grafana/tempo:latest
     container_name: tempo
+    user: root
     command: [ "-config.file=/etc/tempo.yaml" ]
     ports:
       - "3200:3200"   # Tempo HTTP
       - "4317:4317"   # OTLP gRPC
       - "4318:4318"   # OTLP HTTP
     volumes:
-      - ./monitoring/tempo/tempo-config.yml:/etc/tempo.yaml
+      - ./monitoring/tempo/tempo-config.yml:/etc/tempo.yaml:ro
       - tempo-data:/tmp/tempo
     networks:
       - app-network
