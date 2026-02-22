@@ -1,0 +1,253 @@
+version: '3.8'
+
+# ============================================
+# Lab 01: Airflow + MLflow Local Development
+# ============================================
+# This compose file includes only the services
+# needed for Lab 01: ML pipeline automation
+#
+# Services:
+# - PostgreSQL (Airflow metadata)
+# - PostgreSQL (MLflow metadata)
+# - MLflow Server
+# - Airflow Webserver
+# - Airflow Scheduler
+# - Airflow Init
+#
+# Access:
+# - Airflow UI: http://localhost:8080
+# - MLflow UI: http://localhost:5000
+# ============================================
+
+services:
+  # ============================================
+  # PostgreSQL for Airflow (Metadata)
+  # ============================================
+  postgres-airflow:
+    image: postgres:15-alpine
+    container_name: lab01-postgres-airflow
+    environment:
+      POSTGRES_DB: airflow
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: ${POSTGRES_AIRFLOW_PASSWORD:-airflow_password}
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres-airflow-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow -d airflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - lab01-network
+    restart: unless-stopped
+
+  # ============================================
+  # PostgreSQL for MLflow (Metadata)
+  # ============================================
+  postgres-mlflow:
+    image: postgres:15-alpine
+    container_name: lab01-postgres-mlflow
+    environment:
+      POSTGRES_DB: mlflow
+      POSTGRES_USER: mlflow_user
+      POSTGRES_PASSWORD: ${POSTGRES_MLFLOW_PASSWORD:-mlflow_password}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-mlflow-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mlflow_user -d mlflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - lab01-network
+    restart: unless-stopped
+
+  # ============================================
+  # MLflow Server
+  # ============================================
+  mlflow:
+    image: python:3.11-slim
+    container_name: lab01-mlflow
+    working_dir: /mlflow
+    command: >
+      bash -c "
+      pip install --no-cache-dir mlflow psycopg2-binary boto3 &&
+      mlflow server
+      --backend-store-uri postgresql://mlflow_user:${POSTGRES_MLFLOW_PASSWORD:-mlflow_password}@postgres-mlflow:5432/mlflow
+      --default-artifact-root /mlflow/artifacts
+      --host 0.0.0.0
+      --port 5000
+      "
+    environment:
+      # For future S3 integration (Lab 04)
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_DEFAULT_REGION: ${AWS_REGION:-us-east-1}
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow-artifacts:/mlflow/artifacts
+    depends_on:
+      postgres-mlflow:
+        condition: service_healthy
+    networks:
+      - lab01-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ============================================
+  # Airflow Init (Database Setup)
+  # ============================================
+  airflow-init:
+    build:
+      context: ./airflow
+      dockerfile: Dockerfile
+    container_name: lab01-airflow-init
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        airflow db migrate
+        airflow users create \
+          --username admin \
+          --firstname Admin \
+          --lastname User \
+          --role Admin \
+          --email admin@example.com \
+          --password ${AIRFLOW_ADMIN_PASSWORD:-admin}
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:${POSTGRES_AIRFLOW_PASSWORD:-airflow_password}@postgres-airflow/airflow
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:-fb0c3f8c8b3f4c5e8d9a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e}
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    depends_on:
+      postgres-airflow:
+        condition: service_healthy
+    networks:
+      - lab01-network
+
+  # ============================================
+  # Airflow Webserver
+  # ============================================
+  airflow-webserver:
+    build:
+      context: ./airflow
+      dockerfile: Dockerfile
+    container_name: lab01-airflow-webserver
+    command: webserver
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:${POSTGRES_AIRFLOW_PASSWORD:-airflow_password}@postgres-airflow/airflow
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:-fb0c3f8c8b3f4c5e8d9a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e}
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'true'
+      AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_SECRET_KEY:-secret}
+      # MLflow connection
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      # For future AWS integration (Lab 04)
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_DEFAULT_REGION: ${AWS_REGION:-us-east-1}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./training:/opt/airflow/training
+      - ./scripts:/opt/airflow/scripts
+      - airflow-logs:/opt/airflow/logs
+      - training-data:/opt/airflow/training/data
+      - training-models:/opt/airflow/training/models
+    depends_on:
+      postgres-airflow:
+        condition: service_healthy
+      mlflow:
+        condition: service_started
+      airflow-init:
+        condition: service_completed_successfully
+    networks:
+      - lab01-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ============================================
+  # Airflow Scheduler
+  # ============================================
+  airflow-scheduler:
+    build:
+      context: ./airflow
+      dockerfile: Dockerfile
+    container_name: lab01-airflow-scheduler
+    command: scheduler
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:${POSTGRES_AIRFLOW_PASSWORD:-airflow_password}@postgres-airflow/airflow
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:-fb0c3f8c8b3f4c5e8d9a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e}
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      # MLflow connection
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      # For future AWS integration (Lab 04)
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_DEFAULT_REGION: ${AWS_REGION:-us-east-1}
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./training:/opt/airflow/training
+      - ./scripts:/opt/airflow/scripts
+      - airflow-logs:/opt/airflow/logs
+      - training-data:/opt/airflow/training/data
+      - training-models:/opt/airflow/training/models
+    depends_on:
+      postgres-airflow:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+    networks:
+      - lab01-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "airflow jobs check --job-type SchedulerJob --hostname $(hostname)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+# ============================================
+# Networks
+# ============================================
+networks:
+  lab01-network:
+    driver: bridge
+    name: lab01-network
+
+# ============================================
+# Volumes
+# ============================================
+volumes:
+  postgres-airflow-data:
+    name: lab01-postgres-airflow-data
+  postgres-mlflow-data:
+    name: lab01-postgres-mlflow-data
+  mlflow-artifacts:
+    name: lab01-mlflow-artifacts
+  airflow-logs:
+    name: lab01-airflow-logs
+  training-data:
+    name: lab01-training-data
+  training-models:
+    name: lab01-training-models
