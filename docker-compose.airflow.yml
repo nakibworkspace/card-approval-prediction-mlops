@@ -1,0 +1,198 @@
+services:
+  # ============================================
+  # PostgreSQL for MLflow (Metadata)
+  # ============================================
+  postgres-mlflow:
+    image: postgres:15-alpine
+    container_name: postgres-mlflow
+    environment:
+      POSTGRES_DB: mlflow
+      POSTGRES_USER: mlflow_user
+      POSTGRES_PASSWORD: ${POSTGRES_MLFLOW_PASSWORD:-mlflow_password}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-mlflow-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mlflow_user -d mlflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # ============================================
+  # MLflow Server (AWS S3 Backend)
+  # ============================================
+  mlflow:
+    image: nakibahmed/card-approval-mlflow:latest
+    container_name: mlflow
+    command: >
+      mlflow server
+      --backend-store-uri postgresql://mlflow_user:${POSTGRES_MLFLOW_PASSWORD:-mlflow_password}@postgres-mlflow:5432/mlflow
+      --default-artifact-root s3://${S3_BUCKET_NAME}/mlflow-artifacts
+      --host 0.0.0.0
+      --port 5000
+    environment:
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${AWS_REGION:-us-east-1}
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres-mlflow:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # ============================================
+  # PostgreSQL for Airflow
+  # ============================================
+  postgres-airflow:
+    image: postgres:15-alpine
+    container_name: postgres-airflow
+    environment:
+      POSTGRES_DB: airflow
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: ${POSTGRES_AIRFLOW_PASSWORD:-airflow_password}
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres-airflow-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow -d airflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # ============================================
+  # Airflow Init (DB migrations & admin user)
+  # ============================================
+  airflow-init:
+    image: nakibahmed/card-approval-airflow:latest
+    container_name: airflow-init
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        airflow db migrate
+        airflow users create \
+          --username admin \
+          --firstname Admin \
+          --lastname User \
+          --role Admin \
+          --email admin@example.com \
+          --password ${AIRFLOW_ADMIN_PASSWORD:-admin} || true
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:${POSTGRES_AIRFLOW_PASSWORD:-airflow_password}@postgres-airflow/airflow
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:-fb0c3f8c8b3f4c5e8d9a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e}
+    depends_on:
+      postgres-airflow:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  # ============================================
+  # Airflow Webserver
+  # ============================================
+  airflow-webserver:
+    image: nakibahmed/card-approval-airflow:latest
+    container_name: airflow-webserver
+    command: webserver
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:${POSTGRES_AIRFLOW_PASSWORD:-airflow_password}@postgres-airflow/airflow
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:-fb0c3f8c8b3f4c5e8d9a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e}
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'true'
+      AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_SECRET_KEY:-secret}
+      # MLflow connection (same host)
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      # AWS credentials
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${AWS_REGION:-us-east-1}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME}
+      # Kaggle credentials
+      KAGGLE_USERNAME: ${KAGGLE_USERNAME}
+      KAGGLE_KEY: ${KAGGLE_KEY}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./training:/opt/airflow/training
+      - ./scripts:/opt/airflow/scripts
+      - ./requirements.txt:/opt/airflow/requirements.txt
+      - airflow-logs:/opt/airflow/logs
+    depends_on:
+      postgres-airflow:
+        condition: service_healthy
+      mlflow:
+        condition: service_started
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ============================================
+  # Airflow Scheduler
+  # ============================================
+  airflow-scheduler:
+    image: nakibahmed/card-approval-airflow:latest
+    container_name: airflow-scheduler
+    command: scheduler
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:${POSTGRES_AIRFLOW_PASSWORD:-airflow_password}@postgres-airflow/airflow
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:-fb0c3f8c8b3f4c5e8d9a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e}
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      # MLflow connection (same host)
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      # AWS credentials
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${AWS_REGION:-us-east-1}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME}
+      # Kaggle credentials
+      KAGGLE_USERNAME: ${KAGGLE_USERNAME}
+      KAGGLE_KEY: ${KAGGLE_KEY}
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./training:/opt/airflow/training
+      - ./scripts:/opt/airflow/scripts
+      - ./requirements.txt:/opt/airflow/requirements.txt
+      - airflow-logs:/opt/airflow/logs
+    depends_on:
+      postgres-airflow:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "airflow jobs check --job-type SchedulerJob --hostname $(hostname)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres-mlflow-data:
+  postgres-airflow-data:
+  airflow-logs:

@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     MODEL_PATH: str = ""  # e.g., "/app/models" when embedded in Docker image
 
     # AWS Configuration
-    AWS_REGION: str = "us-east-1"
+    AWS_REGION: str = "ap-southeast-1"
     AWS_ACCESS_KEY_ID: str = ""
     AWS_SECRET_ACCESS_KEY: str = ""
     S3_BUCKET_NAME: str = "card-approval-prediction-data-production"

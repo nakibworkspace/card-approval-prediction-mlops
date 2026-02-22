@@ -32,15 +32,6 @@ scrape_configs:
         target_label: instance
         replacement: 'card-approval-api'
 
-  # MLflow Server
-  - job_name: 'mlflow'
-    static_configs:
-      - targets: ['mlflow:5000']
-    relabel_configs:
-      - source_labels: [__address__]
-        target_label: instance
-        replacement: 'mlflow-server'
-
   # PostgreSQL Exporter (optional - requires postgres_exporter)
   # - job_name: 'postgres-api'
   #   static_configs:

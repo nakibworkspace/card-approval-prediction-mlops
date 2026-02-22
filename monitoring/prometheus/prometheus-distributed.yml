@@ -1,0 +1,36 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'card-approval-prediction'
+    environment: 'production'
+
+# Load rules once and periodically evaluate them
+rule_files:
+  # - "alerts/*.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # FastAPI Application (EC2-1: 10.0.1.10)
+  - job_name: 'card-approval-api'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['10.0.1.10:8000']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'card-approval-api'
+
+  # MLflow Server (EC2-2: 10.0.1.20)
+  - job_name: 'mlflow'
+    static_configs:
+      - targets: ['10.0.1.20:5000']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'mlflow-server'

@@ -1,9 +1,15 @@
 apiVersion: 1
 
+deleteDatasources:
+  - name: Prometheus
+  - name: Loki
+  - name: Tempo
+
 datasources:
   # Prometheus
   - name: Prometheus
     type: prometheus
+    uid: prometheus
     access: proxy
     url: http://prometheus:9090
     isDefault: true
@@ -14,6 +20,7 @@ datasources:
   # Loki
   - name: Loki
     type: loki
+    uid: loki
     access: proxy
     url: http://loki:3100
     editable: true
@@ -23,6 +30,7 @@ datasources:
   # Tempo
   - name: Tempo
     type: tempo
+    uid: tempo
     access: proxy
     url: http://tempo:3200
     editable: true
