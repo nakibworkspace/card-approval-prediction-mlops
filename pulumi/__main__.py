@@ -15,7 +15,7 @@ from pulumi import Config, export
 config = Config()
 project_name = "card-approval-prediction"
 environment = config.get("environment") or "production"
-aws_region = config.get("region") or "us-east-1"
+aws_region = aws.get_region().name
 
 # Tags for all resources
 common_tags = {
@@ -61,6 +61,56 @@ data_bucket_public_access_block = aws.s3.BucketPublicAccessBlock(
 )
 
 # ============================================
+# VPC and Networking
+# ============================================
+
+# VPC
+vpc = aws.ec2.Vpc(
+    "monitoring-vpc",
+    cidr_block="10.0.0.0/16",
+    enable_dns_support=True,
+    enable_dns_hostnames=True,
+    tags={**common_tags, "Name": f"{project_name}-vpc"},
+)
+
+# Internet Gateway
+igw = aws.ec2.InternetGateway(
+    "monitoring-igw",
+    vpc_id=vpc.id,
+    tags={**common_tags, "Name": f"{project_name}-igw"},
+)
+
+# Public Subnet
+public_subnet = aws.ec2.Subnet(
+    "monitoring-public-subnet",
+    vpc_id=vpc.id,
+    cidr_block="10.0.1.0/24",
+    map_public_ip_on_launch=True,
+    availability_zone=f"{aws_region}a",
+    tags={**common_tags, "Name": f"{project_name}-public-subnet"},
+)
+
+# Route Table
+public_route_table = aws.ec2.RouteTable(
+    "monitoring-public-rt",
+    vpc_id=vpc.id,
+    routes=[
+        aws.ec2.RouteTableRouteArgs(
+            cidr_block="0.0.0.0/0",
+            gateway_id=igw.id,
+        ),
+    ],
+    tags={**common_tags, "Name": f"{project_name}-public-rt"},
+)
+
+# Route Table Association
+public_rt_association = aws.ec2.RouteTableAssociation(
+    "monitoring-public-rt-assoc",
+    subnet_id=public_subnet.id,
+    route_table_id=public_route_table.id,
+)
+
+# ============================================
 # IAM Roles and Policies
 # ============================================
 
@@ -77,7 +127,6 @@ app_runner_role = aws.iam.Role(
             "Action": "sts:AssumeRole"
         }]
     }""",
-    tags=common_tags,
 )
 
 # Policy for S3 access (MLflow artifacts, models)
@@ -117,7 +166,6 @@ ec2_monitoring_role = aws.iam.Role(
             "Action": "sts:AssumeRole"
         }]
     }""",
-    tags=common_tags,
 )
 
 # Attach CloudWatch policy for monitoring
@@ -140,6 +188,7 @@ ec2_instance_profile = aws.iam.InstanceProfile(
 # Security group for monitoring EC2 instance
 monitoring_sg = aws.ec2.SecurityGroup(
     "monitoring-security-group",
+    vpc_id=vpc.id,
     description="Security group for Prometheus and Grafana monitoring stack",
     ingress=[
         # SSH
@@ -313,6 +362,7 @@ monitoring_instance = aws.ec2.Instance(
     instance_type="t3.medium",
     ami=ami.id,
     iam_instance_profile=ec2_instance_profile.name,
+    subnet_id=public_subnet.id,
     vpc_security_group_ids=[monitoring_sg.id],
     user_data=monitoring_user_data,
     tags={**common_tags, "Name": f"{project_name}-monitoring"},
@@ -322,6 +372,8 @@ monitoring_instance = aws.ec2.Instance(
 # Outputs
 # ============================================
 
+export("vpc_id", vpc.id)
+export("public_subnet_id", public_subnet.id)
 export("s3_bucket_name", data_bucket.id)
 export("s3_bucket_arn", data_bucket.arn)
 export("s3_bucket_url", data_bucket.bucket.apply(lambda b: f"s3://{b}"))

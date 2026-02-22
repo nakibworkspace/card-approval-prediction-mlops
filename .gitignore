@@ -257,7 +257,6 @@ training/data/raw/*.gz
 training/models/*.txt
 training/models/*.png
 training/models/
-models/
 
 # Large data files
 *.csv.gz
