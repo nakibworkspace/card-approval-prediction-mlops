@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import joblib
-import numpy as np
 import pandas as pd
 from loguru import logger
 from sklearn.metrics import (
@@ -20,7 +19,6 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 from src.utils.model_configs import get_model_configs
-from src.utils.resampling import Resampler
 
 import mlflow
 
@@ -275,11 +273,9 @@ class ModelTrainer:
         lines.extend(
             [
                 "",
-                "-" * 60,
                 f"Best Model: {self.best_model_name}",
                 f"Best Score: {self.best_score:.4f}",
                 f"MLflow Run ID: {self.best_model_run_id}",
-                "=" * 60,
             ]
         )
 

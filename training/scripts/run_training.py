@@ -269,7 +269,7 @@ def main():
                 registry.transition_model_stage(model_name=args.model_name, version=model_version, stage="Production")
 
                 logger.info(f"  Model registered: {args.model_name} v{model_version}")
-                logger.info(f"  Transitioned to Production stage")
+                logger.info("  Transitioned to Production stage")
                 logger.info(f"🎯 Run ID: {best_run_id}")
 
             except Exception as e:

@@ -76,7 +76,7 @@ class MLflowRegistry:
         logger.info(f"Loading model: {model_uri}")
 
         model = mlflow.pyfunc.load_model(model_uri)
-        logger.info(f"✓ Model loaded successfully")
+        logger.info("Model loaded successfully")
 
         return model
 

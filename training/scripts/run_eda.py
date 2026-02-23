@@ -89,7 +89,7 @@ def main():
             f.write(f"Application Records: {app_data.shape[0]:,}\n")
             f.write(f"Credit Records: {credit_data.shape[0]:,}\n")
             f.write(f"Merged Records: {len(data):,}\n\n")
-            f.write(f"Target Distribution:\n")
+            f.write("Target Distribution:\n")
             f.write(
                 f"  Good (1): {(data['Label'] == 1).sum():,} ({(data['Label'] == 1).sum() / len(data) * 100:.2f}%)\n"
             )
@@ -97,7 +97,7 @@ def main():
                 f"  Bad (0): {(data['Label'] == 0).sum():,} ({(data['Label'] == 0).sum() / len(data) * 100:.2f}%)\n"
             )
             f.write(f"  Imbalance Ratio: {(data['Label'] == 1).sum() / (data['Label'] == 0).sum():.2f}:1\n\n")
-            f.write(f"Data Info:\n")
+            f.write("Data Info:\n")
             f.write(f"  Shape: {data.shape}\n")
             f.write(f"  Missing values: {data.isnull().sum().sum()}\n")
             f.write(f"  Duplicates: {data.duplicated().sum()}\n")

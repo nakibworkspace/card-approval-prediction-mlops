@@ -43,7 +43,7 @@ class MLflowArtifactManager:
                 scaler_to_save = scaler.scaler if hasattr(scaler, "scaler") else scaler
                 joblib.dump(scaler_to_save, scaler_path)
                 mlflow.log_artifact(str(scaler_path), artifact_path)
-                logger.info(f"✓ Logged scaler to MLflow")
+                logger.info("Logged scaler to MLflow")
 
             # Save PCA
             if pca is not None:
@@ -51,7 +51,7 @@ class MLflowArtifactManager:
                 pca_to_save = pca.pca if hasattr(pca, "pca") else pca
                 joblib.dump(pca_to_save, pca_path)
                 mlflow.log_artifact(str(pca_path), artifact_path)
-                logger.info(f"✓ Logged PCA to MLflow")
+                logger.info("Logged PCA to MLflow")
 
             # Save feature names
             if feature_names is not None:

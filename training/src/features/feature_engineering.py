@@ -125,8 +125,8 @@ class FeatureEngineer:
         X_train_encoded, X_test_encoded, y_train, y_test = self.train_test_split_data(X_encoded, y, test_size=test_size)
 
         logger.info(f"Original split - Train: {len(y_train)}, Test: {len(y_test)}")
-        logger.info(f"  Train - Good: {sum(y_train==1)}, Bad: {sum(y_train==0)}")
-        logger.info(f"  Test - Good: {sum(y_test==1)}, Bad: {sum(y_test==0)}")
+        logger.info(f"  Train - Good: {sum(y_train == 1)}, Bad: {sum(y_train == 0)}")
+        logger.info(f"  Test - Good: {sum(y_test == 1)}, Bad: {sum(y_test == 0)}")
 
         # 3. Apply SMOTE+Tomek ONLY to training set
         if apply_smote:

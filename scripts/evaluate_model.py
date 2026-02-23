@@ -9,16 +9,14 @@ import os
 import sys
 from pathlib import Path
 
-import pandas as pd
-
-import mlflow
-
 # Add paths for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent / "training"))
 
-# Reuse existing evaluation utilities from training module
-from src.utils.metrics import calculate_metrics
+import pandas as pd  # noqa: E402
+from src.utils.metrics import calculate_metrics  # noqa: E402
+
+import mlflow  # noqa: E402
 
 
 def load_mlflow_model(tracking_uri: str, model_name: str, stage: str):
