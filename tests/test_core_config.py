@@ -75,12 +75,6 @@ class TestSettings:
             settings = Settings()  # Should not raise
             assert not hasattr(settings, "UNKNOWN_SETTING")
 
-    def test_google_credentials_default_empty(self):
-        """Test GOOGLE_APPLICATION_CREDENTIALS defaults to empty."""
-        with patch.dict(os.environ, {}, clear=True):
-            settings = Settings()
-            assert settings.GOOGLE_APPLICATION_CREDENTIALS == ""
-
 
 class TestGetSettings:
     """Tests for the get_settings function."""

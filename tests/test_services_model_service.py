@@ -16,8 +16,8 @@ class TestModelService:
     def mock_dependencies(self):
         """Mock all external dependencies for ModelService."""
         with patch("app.services.model_service.get_settings") as mock_settings, patch(
-            "app.services.model_service.setup_gcs_credentials"
-        ) as mock_gcs, patch("app.services.model_service.setup_mlflow_tracking") as mock_mlflow_setup, patch(
+            "app.services.model_service.setup_mlflow_tracking"
+        ) as mock_mlflow_setup, patch(
             "app.services.model_service.get_latest_model_version"
         ) as mock_version, patch(
             "app.services.model_service.mlflow"
@@ -29,7 +29,6 @@ class TestModelService:
             settings.MODEL_NAME = "test_model"
             settings.MODEL_STAGE = "Production"
             settings.MODEL_PATH = None  # Force MLflow loading path
-            settings.GOOGLE_APPLICATION_CREDENTIALS = ""
             mock_settings.return_value = settings
 
             # Mock MLflow client
@@ -48,7 +47,6 @@ class TestModelService:
 
             yield {
                 "settings": mock_settings,
-                "gcs": mock_gcs,
                 "mlflow_setup": mock_mlflow_setup,
                 "version": mock_version,
                 "mlflow": mock_mlflow,
@@ -66,14 +64,6 @@ class TestModelService:
         assert service.model is not None
         assert service.version == "1"
         assert service.run_id == "test-run-id"
-
-    def test_init_sets_up_credentials(self, mock_dependencies):
-        """Test ModelService sets up GCS credentials."""
-        from app.services.model_service import ModelService
-
-        ModelService()
-
-        mock_dependencies["gcs"].assert_called_once()
 
     def test_predict_returns_prediction(self, mock_dependencies):
         """Test predict method returns model prediction."""
