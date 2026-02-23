@@ -115,7 +115,7 @@ public_rt_association = aws.ec2.RouteTableAssociation(
 # ============================================
 # Additional Configuration
 # ============================================
-github_repo = config.get("github_repo") or "https://github.com/nakib-ahmed/card-approval-prediction-mlops.git"
+github_repo = config.get("github_repo") or "https://github.com/nakibworkspace/card-approval-prediction-mlops.git"
 github_branch = config.get("github_branch") or "main"
 
 vpc_cidr = "10.0.0.0/16"
