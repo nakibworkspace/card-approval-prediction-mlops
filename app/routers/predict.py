@@ -1,5 +1,4 @@
-"""Prediction API endpoints.
-"""
+"""Prediction API endpoints."""
 
 from typing import Dict
 

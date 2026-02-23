@@ -40,7 +40,7 @@ Base = declarative_base()
 def get_db() -> Generator[Session, None, None]:
     """
     Dependency to get database session
-    
+
     Usage:
         @app.get("/items")
         def read_items(db: Session = Depends(get_db)):
@@ -57,7 +57,7 @@ def get_db() -> Generator[Session, None, None]:
 def get_db_context():
     """
     Context manager for database session
-    
+
     Usage:
         with get_db_context() as db:
             db.query(Item).all()

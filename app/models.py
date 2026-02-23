@@ -12,11 +12,12 @@ from app.database import Base
 
 class Prediction(Base):
     """Prediction records table"""
+
     __tablename__ = "predictions"
 
     id = Column(Integer, primary_key=True, index=True)
     prediction_id = Column(UUID(as_uuid=True), unique=True, nullable=False, default=uuid.uuid4)
-    
+
     # Input features
     customer_id = Column(Integer)
     code_gender = Column(String(10))
@@ -36,27 +37,28 @@ class Prediction(Base):
     flag_email = Column(Integer)
     occupation_type = Column(String(50))
     cnt_fam_members = Column(Decimal(3, 1))
-    
+
     # Prediction results
     prediction = Column(Integer, nullable=False)
     probability = Column(Decimal(5, 4), nullable=False)
     decision = Column(String(20), nullable=False)
     confidence = Column(Decimal(5, 4), nullable=False)
     model_version = Column(String(50))
-    
+
     # Metadata
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
     response_time_ms = Column(Integer)
 
     __table_args__ = (
-        Index('idx_created_at', 'created_at'),
-        Index('idx_prediction', 'prediction'),
-        Index('idx_customer_id', 'customer_id'),
+        Index("idx_created_at", "created_at"),
+        Index("idx_prediction", "prediction"),
+        Index("idx_customer_id", "customer_id"),
     )
 
 
 class PredictionCache(Base):
     """Prediction cache table"""
+
     __tablename__ = "prediction_cache"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -69,6 +71,7 @@ class PredictionCache(Base):
 
 class ModelPerformance(Base):
     """Model performance metrics table"""
+
     __tablename__ = "model_performance"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -80,6 +83,7 @@ class ModelPerformance(Base):
 
 class DriftDetection(Base):
     """Drift detection results table"""
+
     __tablename__ = "drift_detection"
 
     id = Column(Integer, primary_key=True, index=True)

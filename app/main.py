@@ -1,4 +1,5 @@
 """FastAPI application for Credit Card Approval Prediction."""
+
 import time
 from contextlib import asynccontextmanager
 
@@ -99,6 +100,7 @@ app.include_router(predict.router)
 # Import drift router conditionally (only if Evidently is available)
 try:
     from app.routers import drift
+
     app.include_router(drift.router)
     logger.info("Drift detection endpoints enabled")
 except ImportError:

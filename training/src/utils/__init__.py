@@ -1,5 +1,4 @@
-"""Utilities package
-"""
+"""Utilities package"""
 
 from src.utils.encoders import FeatureEncoder
 from src.utils.helpers import ensure_dir, get_project_root, load_config, save_config

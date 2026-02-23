@@ -1,4 +1,5 @@
 """Logging configuration for the application."""
+
 import json
 import sys
 

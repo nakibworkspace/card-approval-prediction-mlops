@@ -152,17 +152,10 @@ class DriftDetectionService:
                     historical_stats = json.load(f)
 
                 # Compare with historical
-                approval_drift = abs(
-                    approval_rate - historical_stats.get("approval_rate", approval_rate)
-                )
-                confidence_drift = abs(
-                    avg_confidence
-                    - historical_stats.get("avg_confidence", avg_confidence)
-                )
+                approval_drift = abs(approval_rate - historical_stats.get("approval_rate", approval_rate))
+                confidence_drift = abs(avg_confidence - historical_stats.get("avg_confidence", avg_confidence))
 
-                drift_detected = (
-                    approval_drift > threshold or confidence_drift > threshold
-                )
+                drift_detected = approval_drift > threshold or confidence_drift > threshold
 
                 return {
                     "timestamp": datetime.now().isoformat(),
@@ -206,7 +199,5 @@ def get_drift_service() -> DriftDetectionService:
     """Get or create drift detection service instance"""
     global _drift_service
     if _drift_service is None:
-        _drift_service = DriftDetectionService(
-            reference_data_path="training/data/processed/X_train.csv"
-        )
+        _drift_service = DriftDetectionService(reference_data_path="training/data/processed/X_train.csv")
     return _drift_service

@@ -106,9 +106,7 @@ async def drift_status() -> Dict:
         return {
             "status": "active" if has_reference else "inactive",
             "has_reference_data": has_reference,
-            "reference_data_shape": (
-                drift_service.reference_data.shape if has_reference else None
-            ),
+            "reference_data_shape": (drift_service.reference_data.shape if has_reference else None),
             "latest_metrics": latest_metrics,
             "reports_directory": str(drift_service.reports_dir),
         }

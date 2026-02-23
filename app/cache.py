@@ -27,10 +27,10 @@ redis_client = redis.Redis(
 def get_cache(key: str) -> Optional[Any]:
     """
     Get value from cache
-    
+
     Args:
         key: Cache key
-        
+
     Returns:
         Cached value or None if not found
     """
@@ -47,21 +47,17 @@ def get_cache(key: str) -> Optional[Any]:
 def set_cache(key: str, value: Any, ttl: int = 3600) -> bool:
     """
     Set value in cache
-    
+
     Args:
         key: Cache key
         value: Value to cache
         ttl: Time to live in seconds (default: 1 hour)
-        
+
     Returns:
         True if successful, False otherwise
     """
     try:
-        redis_client.setex(
-            key,
-            ttl,
-            json.dumps(value)
-        )
+        redis_client.setex(key, ttl, json.dumps(value))
         return True
     except Exception as e:
         logger.warning(f"Cache set error for key {key}: {e}")
@@ -71,10 +67,10 @@ def set_cache(key: str, value: Any, ttl: int = 3600) -> bool:
 def delete_cache(key: str) -> bool:
     """
     Delete value from cache
-    
+
     Args:
         key: Cache key
-        
+
     Returns:
         True if successful, False otherwise
     """
@@ -89,10 +85,10 @@ def delete_cache(key: str) -> bool:
 def clear_cache(pattern: str = "*") -> int:
     """
     Clear cache by pattern
-    
+
     Args:
         pattern: Key pattern (default: all keys)
-        
+
     Returns:
         Number of keys deleted
     """
@@ -128,9 +124,9 @@ def get_cache_stats() -> dict:
             "keyspace_hits": info.get("keyspace_hits", 0),
             "keyspace_misses": info.get("keyspace_misses", 0),
             "hit_rate": (
-                info.get("keyspace_hits", 0) / 
-                max(info.get("keyspace_hits", 0) + info.get("keyspace_misses", 0), 1)
-            ) * 100
+                info.get("keyspace_hits", 0) / max(info.get("keyspace_hits", 0) + info.get("keyspace_misses", 0), 1)
+            )
+            * 100,
         }
     except Exception as e:
         logger.error(f"Error getting cache stats: {e}")

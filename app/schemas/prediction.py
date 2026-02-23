@@ -1,4 +1,5 @@
 """Prediction request and response schemas."""
+
 from datetime import datetime
 from typing import Optional
 

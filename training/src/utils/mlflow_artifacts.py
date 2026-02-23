@@ -32,6 +32,7 @@ class MLflowArtifactManager:
         """
         try:
             import tempfile
+
             artifact_dir = Path(tempfile.mkdtemp()) / "preprocessors"
             artifact_dir.mkdir(exist_ok=True)
 

@@ -37,7 +37,9 @@ class ModelTrainer:
         "ROC-AUC": "roc_auc",
     }
 
-    def __init__(self, tracking_uri: str = "http://127.0.0.1:5000", experiment_name: str = "credit_card_approval_model_training"):
+    def __init__(
+        self, tracking_uri: str = "http://127.0.0.1:5000", experiment_name: str = "credit_card_approval_model_training"
+    ):
         self.tracking_uri = tracking_uri
         self.experiment_name = experiment_name
 
@@ -110,8 +112,10 @@ class ModelTrainer:
             # Log model
             mlflow.sklearn.log_model(model, "model")
 
-            logger.info(f"{name} | F1: {test_metrics['f1_score']:.4f} | Acc: {test_metrics['accuracy']:.4f} | "
-                        f"AUC: {test_metrics.get('roc_auc', 0):.4f} | Time: {train_time:.2f}s")
+            logger.info(
+                f"{name} | F1: {test_metrics['f1_score']:.4f} | Acc: {test_metrics['accuracy']:.4f} | "
+                f"AUC: {test_metrics.get('roc_auc', 0):.4f} | Time: {train_time:.2f}s"
+            )
 
         # Store results
         self.trained_models[name] = model
@@ -268,14 +272,16 @@ class ModelTrainer:
         results_df = pd.DataFrame(self.results)
         lines.append(results_df.to_string(index=False))
 
-        lines.extend([
-            "",
-            "-" * 60,
-            f"Best Model: {self.best_model_name}",
-            f"Best Score: {self.best_score:.4f}",
-            f"MLflow Run ID: {self.best_model_run_id}",
-            "=" * 60,
-        ])
+        lines.extend(
+            [
+                "",
+                "-" * 60,
+                f"Best Model: {self.best_model_name}",
+                f"Best Score: {self.best_score:.4f}",
+                f"MLflow Run ID: {self.best_model_run_id}",
+                "=" * 60,
+            ]
+        )
 
         with open(summary_path, "w") as f:
             f.write("\n".join(lines))

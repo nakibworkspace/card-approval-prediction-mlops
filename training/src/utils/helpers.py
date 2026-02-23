@@ -1,6 +1,7 @@
 """
 Utility functions for card approval prediction
 """
+
 from pathlib import Path
 
 import yaml

@@ -1,6 +1,7 @@
 """
 Prometheus metrics for monitoring
 """
+
 from prometheus_client import Counter, Gauge, Histogram, generate_latest
 from prometheus_client.core import CollectorRegistry
 from starlette.responses import Response

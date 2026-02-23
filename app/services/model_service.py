@@ -9,7 +9,6 @@ from loguru import logger
 
 from app.core.config import get_settings
 from app.core.tracing import get_tracer
-from app.utils.gcs import setup_gcs_credentials
 from app.utils.mlflow_helpers import get_latest_model_version, load_model_with_flavor, setup_mlflow_tracking
 
 
@@ -110,10 +109,6 @@ class ModelService:
         self._fetch_model_version()
         self._load_model_artifacts_from_mlflow()
 
-    def _setup_credentials(self) -> None:
-        """Setup GCS credentials for MLflow artifact access."""
-        setup_gcs_credentials(self.settings.GOOGLE_APPLICATION_CREDENTIALS)
-
     def _fetch_model_version(self) -> None:
         """Fetch the latest model version from MLflow registry."""
         client = setup_mlflow_tracking(self.settings.MLFLOW_TRACKING_URI)
@@ -198,7 +193,9 @@ class ModelService:
             "version": self.version,
             "run_id": self.run_id,
             "loaded": self.model is not None,
-            "source": "local" if self.settings.MODEL_PATH and self.settings.MODEL_PATH not in ("none", "") else "mlflow",
+            "source": (
+                "local" if self.settings.MODEL_PATH and self.settings.MODEL_PATH not in ("none", "") else "mlflow"
+            ),
         }
 
 
