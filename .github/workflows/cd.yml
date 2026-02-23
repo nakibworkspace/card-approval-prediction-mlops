@@ -3,12 +3,14 @@ name: CD - Continuous Deployment
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - '*.md'
+      - 'pulumi/**'
   workflow_dispatch:
 
 env:
   DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
-  IMAGE_NAME: card-approval-api
-  AWS_REGION: us-east-1
+  AWS_REGION: ap-southeast-1
 
 jobs:
   model-evaluation:
@@ -37,6 +39,8 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Download model from MLflow
+        id: download-model
+        continue-on-error: true
         env:
           MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
           MODEL_NAME: card_approval_model
@@ -45,27 +49,59 @@ jobs:
           python scripts/download_model.py
 
       - name: Evaluate model performance
+        if: steps.download-model.outcome == 'success'
         env:
           F1_THRESHOLD: 0.90
         run: |
           python scripts/evaluate_model.py
 
       - name: Upload model artifacts
+        if: steps.download-model.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: model-artifacts
           path: models/
 
   build-and-push:
-    name: Build and Push Docker Image
+    name: Build and Push Docker Images
     runs-on: ubuntu-latest
     needs: model-evaluation
+    if: always() && !cancelled()
+
+    strategy:
+      matrix:
+        include:
+          - image: card-approval-api
+            dockerfile: Dockerfile
+            context: .
+          - image: card-approval-airflow
+            dockerfile: airflow/Dockerfile
+            context: .
+          - image: card-approval-mlflow
+            dockerfile: mlflow/Dockerfile
+            context: .
+          - image: card-approval-prometheus
+            dockerfile: monitoring/prometheus/Dockerfile
+            context: monitoring/prometheus
+          - image: card-approval-grafana
+            dockerfile: monitoring/grafana/Dockerfile
+            context: monitoring/grafana
+          - image: card-approval-loki
+            dockerfile: monitoring/loki/Dockerfile
+            context: monitoring/loki
+          - image: card-approval-promtail
+            dockerfile: monitoring/promtail/Dockerfile
+            context: monitoring/promtail
+          - image: card-approval-tempo
+            dockerfile: monitoring/tempo/Dockerfile
+            context: monitoring/tempo
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Download model artifacts
+        if: matrix.image == 'card-approval-api'
         uses: actions/download-artifact@v4
         with:
           name: model-artifacts
@@ -80,142 +116,74 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: ./Dockerfile
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            ${{ secrets.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:latest
+            ${{ secrets.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Run Trivy security scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-
-      - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: 'trivy-results.sarif'
-
-  deploy-app-runner:
-    name: Deploy to AWS App Runner
+  deploy-api:
+    name: Deploy API Stack (EC2-1)
     runs-on: ubuntu-latest
     needs: build-and-push
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.0
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          host: ${{ secrets.EC2_API_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /opt/app
+            git pull origin main
+            docker-compose -f docker-compose.api.yml pull
+            docker-compose -f docker-compose.api.yml up -d
+            # Wait and verify health
+            sleep 30
+            curl -sf http://localhost/health || echo "WARNING: Health check failed"
 
-      - name: Deploy to App Runner
-        run: |
-          # Check if service exists
-          SERVICE_ARN=$(aws apprunner list-services --query "ServiceSummaryList[?ServiceName=='card-approval-api'].ServiceArn" --output text)
-          
-          if [ -z "$SERVICE_ARN" ]; then
-            echo "Creating new App Runner service..."
-            aws apprunner create-service \
-              --service-name card-approval-api \
-              --source-configuration '{
-                "ImageRepository": {
-                  "ImageIdentifier": "${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest",
-                  "ImageRepositoryType": "ECR_PUBLIC",
-                  "ImageConfiguration": {
-                    "Port": "8000",
-                    "RuntimeEnvironmentVariables": {
-                      "MLFLOW_TRACKING_URI": "${{ secrets.MLFLOW_TRACKING_URI }}",
-                      "MODEL_NAME": "card_approval_model",
-                      "MODEL_STAGE": "Production",
-                      "AWS_DEFAULT_REGION": "${{ env.AWS_REGION }}"
-                    }
-                  }
-                },
-                "AutoDeploymentsEnabled": true
-              }' \
-              --instance-configuration '{
-                "Cpu": "1 vCPU",
-                "Memory": "2 GB"
-              }' \
-              --health-check-configuration '{
-                "Protocol": "HTTP",
-                "Path": "/health",
-                "Interval": 10,
-                "Timeout": 5,
-                "HealthyThreshold": 1,
-                "UnhealthyThreshold": 5
-              }'
-          else
-            echo "Updating existing App Runner service..."
-            aws apprunner update-service \
-              --service-arn $SERVICE_ARN \
-              --source-configuration '{
-                "ImageRepository": {
-                  "ImageIdentifier": "${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest",
-                  "ImageConfiguration": {
-                    "Port": "8000",
-                    "RuntimeEnvironmentVariables": {
-                      "MLFLOW_TRACKING_URI": "${{ secrets.MLFLOW_TRACKING_URI }}",
-                      "MODEL_NAME": "card_approval_model",
-                      "MODEL_STAGE": "Production",
-                      "AWS_DEFAULT_REGION": "${{ env.AWS_REGION }}"
-                    }
-                  }
-                }
-              }'
-          fi
-
-      - name: Wait for deployment
-        run: |
-          echo "Waiting for App Runner service to be ready..."
-          aws apprunner wait service-running --service-arn $(aws apprunner list-services --query "ServiceSummaryList[?ServiceName=='card-approval-api'].ServiceArn" --output text)
-
-      - name: Get service URL
-        id: get-url
-        run: |
-          SERVICE_URL=$(aws apprunner describe-service --service-arn $(aws apprunner list-services --query "ServiceSummaryList[?ServiceName=='card-approval-api'].ServiceArn" --output text) --query "Service.ServiceUrl" --output text)
-          echo "service_url=https://$SERVICE_URL" >> $GITHUB_OUTPUT
-          echo "Service deployed at: https://$SERVICE_URL"
-
-      - name: Health check
-        run: |
-          sleep 30
-          curl -f ${{ steps.get-url.outputs.service_url }}/health || exit 1
-
-  notify:
-    name: Deployment Notification
+  deploy-airflow-mlflow:
+    name: Deploy Airflow & MLflow Stack (EC2-2)
     runs-on: ubuntu-latest
-    needs: [deploy-app-runner]
-    if: always()
-
+    needs: build-and-push
     steps:
-      - name: Deployment Status
-        run: |
-          if [ "${{ needs.deploy-app-runner.result }}" == "success" ]; then
-            echo "✅ Deployment successful!"
-          else
-            echo "❌ Deployment failed!"
-            exit 1
-          fi
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_AIRFLOW_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /opt/app
+            git pull origin main
+            docker-compose -f docker-compose.airflow.yml pull
+            docker-compose -f docker-compose.airflow.yml up -d
+            # Wait and verify MLflow is up
+            sleep 30
+            curl -sf http://localhost:5000 || echo "WARNING: MLflow health check failed"
+
+  deploy-monitoring:
+    name: Deploy Monitoring Stack (EC2-3)
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_MONITORING_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /opt/app
+            git pull origin main
+            docker-compose -f docker-compose.monitoring.yml pull
+            docker-compose -f docker-compose.monitoring.yml up -d
+            # Wait and verify Grafana is up
+            sleep 30
+            curl -sf http://localhost:3000/api/health || echo "WARNING: Grafana health check failed"

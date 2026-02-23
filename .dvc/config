@@ -1,7 +1,0 @@
-[core]
-    remote = s3storage
-    autostage = true
-
-['remote "s3storage"']
-    url = s3://card-approval-prediction-data-production/dvc-storage
-    region = us-east-1
