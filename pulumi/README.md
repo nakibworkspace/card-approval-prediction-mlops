@@ -1,91 +1,92 @@
-# Pulumi Infrastructure - AWS
+ # AWS Python S3 Bucket Pulumi Template
 
-This directory contains the Pulumi Infrastructure as Code (IaC) for deploying the Card Approval Prediction system on AWS.
+ A minimal Pulumi template for provisioning a single AWS S3 bucket using Python.
 
-## What Gets Deployed
+ ## Overview
 
-1. **S3 Bucket** - For DVC data versioning, MLflow artifacts, and model storage
-2. **IAM Roles** - For App Runner and EC2 instances
-3. **EC2 Instance (t3.medium)** - Monitoring stack with Prometheus, Grafana, and Nginx
-4. **Security Groups** - Network access control
+ This template provisions an S3 bucket (`pulumi_aws.s3.BucketV2`) in your AWS account and exports its ID as an output. It’s an ideal starting point when:
+  - You want to learn Pulumi with AWS in Python.
+  - You need a barebones S3 bucket deployment to build upon.
+  - You prefer a minimal template without extra dependencies.
 
-## Prerequisites
+ ## Prerequisites
 
-```bash
-# Install Pulumi
-curl -fsSL https://get.pulumi.com | sh
+ - An AWS account with permissions to create S3 buckets.
+ - AWS credentials configured in your environment (for example via AWS CLI or environment variables).
+ - Python 3.6 or later installed.
+ - Pulumi CLI already installed and logged in.
 
-# Install AWS CLI
-pip install awscli
+ ## Getting Started
 
-# Configure AWS credentials
-aws configure
-```
+ 1. Generate a new project from this template:
+    ```bash
+    pulumi new aws-python
+    ```
+ 2. Follow the prompts to set your project name and AWS region (default: `us-east-1`).
+ 3. Change into your project directory:
+    ```bash
+    cd <project-name>
+    ```
+ 4. Preview the planned changes:
+    ```bash
+    pulumi preview
+    ```
+ 5. Deploy the stack:
+    ```bash
+    pulumi up
+    ```
+ 6. Tear down when finished:
+    ```bash
+    pulumi destroy
+    ```
 
-## Deployment
+ ## Project Layout
 
-```bash
-# Navigate to pulumi directory
-cd pulumi
+ After running `pulumi new`, your directory will look like:
+ ```
+ ├── __main__.py         # Entry point of the Pulumi program
+ ├── Pulumi.yaml         # Project metadata and template configuration
+ ├── requirements.txt    # Python dependencies
+ └── Pulumi.<stack>.yaml # Stack-specific configuration (e.g., Pulumi.dev.yaml)
+ ```
 
-# Install Python dependencies
-pip install -r requirements.txt
+ ## Configuration
 
-# Login to Pulumi (use local backend or Pulumi Cloud)
-pulumi login --local  # For local state management
-# OR
-pulumi login  # For Pulumi Cloud
+ This template defines the following config value:
 
-# Initialize stack
-pulumi stack init dev
+ - `aws:region` (string)
+   The AWS region to deploy resources into.
+   Default: `us-east-1`
 
-# Preview changes
-pulumi preview
+ View or update configuration with:
+ ```bash
+ pulumi config get aws:region
+ pulumi config set aws:region us-west-2
+ ```
 
-# Deploy infrastructure
-pulumi up
+ ## Outputs
 
-# View outputs
-pulumi stack output
-```
+ Once deployed, the stack exports:
 
-## Outputs
+ - `bucket_name` — the ID of the created S3 bucket.
 
-After deployment, you'll get:
+ Retrieve outputs with:
+ ```bash
+ pulumi stack output bucket_name
+ ```
 
-- `s3_bucket_name` - S3 bucket for data/models
-- `s3_bucket_url` - S3 URL (s3://bucket-name)
-- `monitoring_instance_public_ip` - Public IP of monitoring server
-- `grafana_url` - Grafana dashboard URL
-- `prometheus_url` - Prometheus URL
+ ## Next Steps
 
-## Access Monitoring
+ - Customize `__main__.py` to add or configure additional resources.
+ - Explore the Pulumi AWS SDK: https://www.pulumi.com/registry/packages/aws/
+ - Break your infrastructure into modules for better organization.
+ - Integrate into CI/CD pipelines for automated deployments.
 
-```bash
-# Get monitoring URLs
-pulumi stack output grafana_url
-pulumi stack output prometheus_url
+ ## Help and Community
 
-# Default Grafana credentials
-# Username: admin
-# Password: admin (change on first login)
-```
+ If you have questions or need assistance:
+ - Pulumi Documentation: https://www.pulumi.com/docs/
+ - Community Slack: https://slack.pulumi.com/
+ - GitHub Issues: https://github.com/pulumi/pulumi/issues
 
-## Destroy Infrastructure
-
-```bash
-pulumi destroy
-```
-
-## Stack Management
-
-```bash
-# List stacks
-pulumi stack ls
-
-# Switch stack
-pulumi stack select prod
-
-# Export stack state
-pulumi stack export > stack-backup.json
-```
+ Contributions and feedback are always welcome!
