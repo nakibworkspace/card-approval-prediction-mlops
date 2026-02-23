@@ -64,6 +64,7 @@ jobs:
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
           push: true
+          provenance: false
           tags: |
             ${{ env.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:latest
             ${{ env.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:${{ github.sha }}
