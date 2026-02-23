@@ -2,8 +2,9 @@
 
 from typing import Any, Optional, Tuple
 
-import mlflow
 from loguru import logger
+
+import mlflow
 
 
 def setup_mlflow_tracking(tracking_uri: str) -> mlflow.tracking.MlflowClient:

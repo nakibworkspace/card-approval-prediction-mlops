@@ -87,7 +87,7 @@ class TestModelService:
         with pytest.raises(RuntimeError) as exc_info:
             service.predict(pd.DataFrame({"PC1": [0.5]}))
 
-        assert "Model not loaded" in str(exc_info.value)
+        assert "No model loaded" in str(exc_info.value)
 
     def test_predict_proba_returns_probabilities(self, mock_dependencies):
         """Test predict_proba returns probability array."""

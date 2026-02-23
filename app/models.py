@@ -2,10 +2,11 @@
 SQLAlchemy models for database tables
 """
 
-from datetime import datetime
-from sqlalchemy import Column, Integer, String, Decimal, DateTime, Boolean, JSON, Index
-from sqlalchemy.dialects.postgresql import UUID
 import uuid
+from datetime import datetime
+
+from sqlalchemy import JSON, Boolean, Column, DateTime, Decimal, Index, Integer, String
+from sqlalchemy.dialects.postgresql import UUID
 
 from app.database import Base
 

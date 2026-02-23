@@ -5,10 +5,10 @@ Database connection and session management for PostgreSQL
 from contextlib import contextmanager
 from typing import Generator
 
+from loguru import logger
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, sessionmaker
-from loguru import logger
 
 from app.core.config import get_settings
 

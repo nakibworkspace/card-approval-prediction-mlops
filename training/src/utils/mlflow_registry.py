@@ -4,9 +4,10 @@ MLflow Model Registry utilities for model versioning and deployment
 
 from typing import Dict, Optional
 
-import mlflow
 from loguru import logger
 from mlflow.tracking import MlflowClient
+
+import mlflow
 
 
 class MLflowRegistry:

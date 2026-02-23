@@ -4,9 +4,9 @@ import json
 from functools import lru_cache
 from pathlib import Path
 
-import mlflow
 from loguru import logger
 
+import mlflow
 from app.core.config import get_settings
 from app.core.tracing import get_tracer
 from app.utils.mlflow_helpers import get_latest_model_version, load_model_with_flavor, setup_mlflow_tracking

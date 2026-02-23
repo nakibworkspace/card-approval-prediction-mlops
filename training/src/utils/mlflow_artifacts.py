@@ -7,8 +7,9 @@ from pathlib import Path
 from typing import Dict, Optional
 
 import joblib
-import mlflow
 from loguru import logger
+
+import mlflow
 
 
 class MLflowArtifactManager:

@@ -9,8 +9,9 @@ import os
 import sys
 from pathlib import Path
 
-import mlflow
 import pandas as pd
+
+import mlflow
 
 # Add paths for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))

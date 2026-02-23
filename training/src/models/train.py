@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import joblib
-import mlflow
 import numpy as np
 import pandas as pd
 from loguru import logger
@@ -20,9 +19,10 @@ from sklearn.metrics import (
     recall_score,
     roc_auc_score,
 )
-
 from src.utils.model_configs import get_model_configs
 from src.utils.resampling import Resampler
+
+import mlflow
 
 
 class ModelTrainer:

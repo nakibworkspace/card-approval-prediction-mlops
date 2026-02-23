@@ -6,10 +6,10 @@ from pathlib import Path
 from typing import List, Optional
 
 import joblib
-import mlflow
 import pandas as pd
 from loguru import logger
 
+import mlflow
 from app.core.config import get_settings
 from app.core.tracing import get_tracer
 
