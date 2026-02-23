@@ -65,8 +65,8 @@ jobs:
           file: ${{ matrix.dockerfile }}
           push: true
           tags: |
-            ${{ secrets.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:latest
-            ${{ secrets.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:${{ github.sha }}
+            ${{ env.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:latest
+            ${{ env.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
