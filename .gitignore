@@ -295,3 +295,5 @@ reports/
 airflow-logs/
 dags/__pycache__/
 dags/*.pyc
+
+text.txt

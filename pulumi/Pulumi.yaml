@@ -1,5 +1,5 @@
-name: card-approval-prediction
-description: aws project
+name: aws-proj
+description: awj-projs
 runtime:
   name: python
   options:
