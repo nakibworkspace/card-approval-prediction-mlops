@@ -129,6 +129,8 @@ services:
       - ./dags:/opt/airflow/dags
       - ./training:/opt/airflow/training
       - training-data:/opt/airflow/training/data
+      - training-outputs:/opt/airflow/training/outputs
+      - training-models:/opt/airflow/training/models
       - ./scripts:/opt/airflow/scripts
       - ./requirements.txt:/opt/airflow/requirements.txt
       - airflow-logs:/opt/airflow/logs
@@ -173,6 +175,8 @@ services:
       - ./dags:/opt/airflow/dags
       - ./training:/opt/airflow/training
       - training-data:/opt/airflow/training/data
+      - training-outputs:/opt/airflow/training/outputs
+      - training-models:/opt/airflow/training/models
       - ./scripts:/opt/airflow/scripts
       - ./requirements.txt:/opt/airflow/requirements.txt
       - airflow-logs:/opt/airflow/logs
@@ -199,3 +203,5 @@ volumes:
   postgres-airflow-data:
   airflow-logs:
   training-data:
+  training-outputs:
+  training-models:
